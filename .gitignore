@@ -1,0 +1,6 @@
+/.direnv/
+/ralph-loop
+/dist/
+*.log
+*.jsonl
+!testdata/**/*.jsonl

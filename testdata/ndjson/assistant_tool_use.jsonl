@@ -1,0 +1,1 @@
+{"type":"assistant","message":{"model":"claude-sonnet-5","id":"msg_2","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"echo hello","description":"say hello"}}]}}

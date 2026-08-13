@@ -1,0 +1,1 @@
+{"is_error":true,"duration_api_ms":500,"num_turns":3,"stop_reason":"error","session_id":"sess_2","total_cost_usd":0.12,"subtype":"error_max_turns","result":"Blocked, no commit made.","duration_ms":900,"type":"result"}
