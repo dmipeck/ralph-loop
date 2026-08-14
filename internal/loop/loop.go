@@ -17,6 +17,7 @@ import (
 	"github.com/dmipeck/ralph-loop/internal/display"
 	"github.com/dmipeck/ralph-loop/internal/gitutil"
 	"github.com/dmipeck/ralph-loop/internal/logging"
+	"github.com/dmipeck/ralph-loop/internal/prompt"
 )
 
 // Outcome is what one iteration produced, as input to Decide.
@@ -192,7 +193,8 @@ func (c *Controller) runOneIteration(ctx context.Context, claudeBinary string, i
 	}
 	defer logs.Close()
 
-	args := claude.BuildArgs(c.cfg, string(promptBytes))
+	fullPrompt := prompt.Compose(c.cfg.CompletionPromise, string(promptBytes))
+	args := claude.BuildArgs(c.cfg, fullPrompt)
 
 	var parseWarnings int
 	onParseError := func(line string, perr error) {

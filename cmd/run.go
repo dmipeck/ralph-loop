@@ -15,6 +15,7 @@ import (
 	"github.com/dmipeck/ralph-loop/internal/claude"
 	"github.com/dmipeck/ralph-loop/internal/config"
 	"github.com/dmipeck/ralph-loop/internal/loop"
+	"github.com/dmipeck/ralph-loop/internal/prompt"
 	"github.com/spf13/cobra"
 )
 
@@ -143,7 +144,8 @@ func runRun(cmd *cobra.Command, _ []string) error {
 		if err != nil {
 			return fmt.Errorf("read prompt file: %w", err)
 		}
-		argv := claude.BuildArgs(cfg, string(promptBytes))
+		fullPrompt := prompt.Compose(cfg.CompletionPromise, string(promptBytes))
+		argv := claude.BuildArgs(cfg, fullPrompt)
 		fmt.Fprintln(out, "Ralph loop starting (dry run — not invoking claude)")
 		printConfigSummary(out, cfg)
 		fmt.Fprintf(out, "\nclaude %s\n", shellJoinForDisplay(argv))

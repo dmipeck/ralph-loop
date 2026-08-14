@@ -17,10 +17,11 @@
 
         packages.ralph-loop = pkgs.buildGoModule {
           pname = "ralph-loop";
-          version = "0.0.0";
+          version = "0.1.0";
           src = self;
           vendorHash = "sha256-7K17JaXFsjf163g5PXCb5ng2gYdotnZ2IDKk8KFjNj0=";
           nativeCheckInputs = [ pkgs.git ];
+          ldflags = [ "-X github.com/dmipeck/ralph-loop/cmd.version=0.1.0" ];
         };
 
         packages.claude-plugin = pkgs.runCommand "ralph-loop-claude-plugin" {
