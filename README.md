@@ -26,22 +26,21 @@ go build -o ralph-loop .
 
 ## Usage
 
+Run it from inside the target git repo — there's no `--repo-dir`, it always
+operates on the current directory. Supply the prompt either as a literal
+string or a path to a file:
+
 ```
-# Scaffold a starter prompt file into a project
-ralph-loop init --repo-dir /path/to/project
+cd /path/to/project
 
 # See what would run without spending anything
-ralph-loop run \
-  --repo-dir /path/to/project \
-  --prompt-file /path/to/project/PROMPT.md \
-  --completion-promise "PLAN COMPLETE" \
-  --dry-run
+ralph-loop --prompt "Implement X, verify with \`go test ./...\`" --dry-run
+
+# ...or with a prompt already written to a file, re-read fresh each iteration
+ralph-loop --prompt-file PLAN.md --dry-run
 
 # Run for real, with sensible safety limits
-ralph-loop run \
-  --repo-dir /path/to/project \
-  --prompt-file /path/to/project/PROMPT.md \
-  --completion-promise "PLAN COMPLETE" \
+ralph-loop --prompt-file PLAN.md \
   --max-iterations 40 \
   --max-stalled-iterations 3 \
   --max-total-cost-usd 20 \
@@ -49,7 +48,10 @@ ralph-loop run \
   --preflight-cmd "mysqladmin ping"
 ```
 
-Run `ralph-loop run --help` for the full flag list. Notable ones:
+`--prompt`/`--prompt-file` are the only required flags (exactly one of the
+two). Everything else — including the completion-promise phrase claude is
+told to output when done — has a built-in default, so no other setup is
+needed. Run `ralph-loop --help` for the full flag list. Notable ones:
 
 - `--allowed-tool` (repeatable) adds to a generic baseline (`Read`, `Write`,
   `Edit`, `Glob`, `Grep`, `Bash(git *)`) — pass project-specific commands

@@ -2,7 +2,7 @@
 
 You are one iteration of an unattended loop. You have no memory of any
 previous iteration — this process started fresh. The project prompt below
-(this project's own prompt file, supplied via --prompt-file) and the
+(this project's own prompt, supplied via --prompt or --prompt-file) and the
 current state of the git repository are the *only* sources of truth for
 what has already been done and what remains. Do not assume anything about
 prior progress beyond what you can verify by reading files and git
@@ -48,6 +48,15 @@ edits. If you notice unrelated cleanup worth doing, leave it for a future
 iteration; do not touch it now.
 
 - `git add` only the files that belong to this slice.
+- Never stage or commit the `--prompt-file` prompt file itself, nor any
+  other scratch/planning/tracking file you create to organize your own
+  work across iterations (todo lists, progress notes, scratch scripts,
+  etc.) — those are local planning artifacts, not part of the project. If
+  such a file isn't already excluded from git, add it to
+  `.git/info/exclude` (a local, uncommitted exclude list) rather than
+  staging it — do **not** edit the project's own `.gitignore` for this,
+  since that file is itself part of the project and shared with everyone
+  who clones it.
 - Write a commit message describing that one change and referencing the
   relevant part of the project prompt.
 - `git commit`.
