@@ -13,22 +13,16 @@ import (
 //go:embed templates/harness.md
 var harnessTemplate string
 
-//go:embed templates/starter.md
-var starterTemplate string
-
 // completionPromisePlaceholder is substituted with the run's actual
-// --completion-promise value, so the phrase claude is told to promise
-// always matches the phrase the loop is watching for — the user never
-// has to keep two copies of it in sync.
+// completion promise, so the phrase claude is told to promise always
+// matches the phrase the loop is watching for — the user never has to keep
+// two copies of it in sync.
 const completionPromisePlaceholder = "{{COMPLETION_PROMISE}}"
 
-// Starter returns the starter template written by `ralph-loop init` — a
-// project-specific goal/plan/verification skeleton. It intentionally does
-// not contain the harness mechanics; those are injected by Compose at run
-// time instead.
-func Starter() string {
-	return starterTemplate
-}
+// DefaultCompletionPromise is used when the user doesn't override
+// --completion-promise, so a completion phrase always exists without
+// requiring any user input.
+const DefaultCompletionPromise = "RALPH_LOOP_COMPLETE"
 
 // Compose builds the full prompt sent to claude for one iteration: the
 // built-in harness (with completionPromise substituted in), followed by

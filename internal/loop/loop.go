@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"time"
 
@@ -182,9 +181,9 @@ func (c *Controller) runOneIteration(ctx context.Context, claudeBinary string, i
 		return Outcome{Iteration: iteration}, fmt.Errorf("git rev-parse HEAD (before): %w", err)
 	}
 
-	promptBytes, err := os.ReadFile(c.cfg.PromptFile)
+	promptText, err := c.cfg.ReadPrompt()
 	if err != nil {
-		return Outcome{Iteration: iteration}, fmt.Errorf("read prompt file: %w", err)
+		return Outcome{Iteration: iteration}, err
 	}
 
 	logs, err := logging.OpenIterationLogs(c.cfg.LogDir, iteration)
@@ -193,7 +192,7 @@ func (c *Controller) runOneIteration(ctx context.Context, claudeBinary string, i
 	}
 	defer logs.Close()
 
-	fullPrompt := prompt.Compose(c.cfg.CompletionPromise, string(promptBytes))
+	fullPrompt := prompt.Compose(c.cfg.CompletionPromise, promptText)
 	args := claude.BuildArgs(c.cfg, fullPrompt)
 
 	var parseWarnings int

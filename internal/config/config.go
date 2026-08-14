@@ -12,8 +12,13 @@ import (
 // Every field is expected to already be resolved (defaults applied, paths
 // made absolute) by the time Validate is called.
 type Config struct {
-	RepoDir    string
+	RepoDir string
+
+	// Exactly one of PromptFile/PromptText is set. PromptFile is re-read
+	// fresh at the start of every iteration; PromptText is a fixed string
+	// used as-is for every iteration.
 	PromptFile string
+	PromptText string
 
 	MaxIterations        int // 0 = unlimited
 	MaxStalledIterations int // 0 = disabled
@@ -41,23 +46,28 @@ type Config struct {
 // paths actually exist. It does not mutate Config — callers apply defaults
 // before calling this.
 func (c *Config) Validate() error {
-	if c.PromptFile == "" {
-		return fmt.Errorf("prompt file is required (--prompt-file)")
+	if c.PromptFile == "" && c.PromptText == "" {
+		return fmt.Errorf("a prompt is required (--prompt or --prompt-file)")
 	}
-	info, err := os.Stat(c.PromptFile)
-	if err != nil {
-		return fmt.Errorf("prompt file %q: %w", c.PromptFile, err)
+	if c.PromptFile != "" && c.PromptText != "" {
+		return fmt.Errorf("--prompt and --prompt-file are mutually exclusive")
 	}
-	if info.IsDir() {
-		return fmt.Errorf("prompt file %q is a directory", c.PromptFile)
+	if c.PromptFile != "" {
+		info, err := os.Stat(c.PromptFile)
+		if err != nil {
+			return fmt.Errorf("prompt file %q: %w", c.PromptFile, err)
+		}
+		if info.IsDir() {
+			return fmt.Errorf("prompt file %q is a directory", c.PromptFile)
+		}
 	}
 
 	if c.CompletionPromise == "" {
-		return fmt.Errorf("completion promise is required (--completion-promise)")
+		return fmt.Errorf("completion promise must be resolved before validation")
 	}
 
 	if c.RepoDir == "" {
-		return fmt.Errorf("repo dir is required (--repo-dir)")
+		return fmt.Errorf("repo dir could not be resolved")
 	}
 	repoInfo, err := os.Stat(c.RepoDir)
 	if err != nil {
@@ -67,7 +77,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("repo dir %q is not a directory", c.RepoDir)
 	}
 	if _, err := os.Stat(filepath.Join(c.RepoDir, ".git")); err != nil {
-		return fmt.Errorf("repo dir %q does not look like a git repository (no .git): %w", c.RepoDir, err)
+		return fmt.Errorf("repo dir %q does not look like a git repository (no .git) — run ralph-loop from inside the target repo: %w", c.RepoDir, err)
 	}
 
 	if c.MaxIterations < 0 {
@@ -100,4 +110,18 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
+}
+
+// ReadPrompt resolves the effective prompt text for one iteration: if
+// PromptFile is set it's read fresh (so edits between iterations are
+// picked up), otherwise the fixed PromptText is returned as-is.
+func (c *Config) ReadPrompt() (string, error) {
+	if c.PromptFile != "" {
+		b, err := os.ReadFile(c.PromptFile)
+		if err != nil {
+			return "", fmt.Errorf("read prompt file: %w", err)
+		}
+		return string(b), nil
+	}
+	return c.PromptText, nil
 }
