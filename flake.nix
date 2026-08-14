@@ -10,32 +10,38 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
 
-      perSystem = { pkgs, ... }: {
+      perSystem = { pkgs, config, ... }: {
         devShells.default = pkgs.mkShell {
           packages = [ pkgs.go pkgs.gopls pkgs.golangci-lint pkgs.git ];
         };
 
         packages.ralph-loop = pkgs.buildGoModule {
           pname = "ralph-loop";
-          version = "0.1.0";
+          version = "0.2.0";
           src = self;
           vendorHash = "sha256-7K17JaXFsjf163g5PXCb5ng2gYdotnZ2IDKk8KFjNj0=";
           nativeCheckInputs = [ pkgs.git ];
-          ldflags = [ "-X github.com/dmipeck/ralph-loop/cmd.version=0.1.0" ];
+          ldflags = [ "-X github.com/dmipeck/ralph-loop/cmd.version=0.2.0" ];
         };
 
-        packages.claude-plugin = pkgs.runCommand "ralph-loop-claude-plugin" {
-          manifest = builtins.toJSON {
-            name = "ralph-loop";
-            description = "Drive the ralph-loop CLI, which runs the Ralph Wiggum technique against a Claude Code project.";
-          };
-          passAsFile = [ "manifest" ];
-        } ''
-          mkdir -p "$out/skills"
-          cp -r ${self}/skills/ralph-loop "$out/skills/ralph-loop"
+        # A complete, installable `ralph` plugin bundle: the repo's checked-in
+        # plugin directories (.claude-plugin/, skills/, commands/, agents/,
+        # hooks/, scripts/ — those are the single source of truth, nothing
+        # regenerated here) plus a prebuilt `ralph-loop` binary at bin/, so
+        # scripts/ralph-lib.sh's `ralph_find_binary` finds it without needing
+        # a Go toolchain at plugin-run time.
+        packages.claude-plugin = pkgs.runCommand "ralph-claude-plugin" { } ''
+          mkdir -p "$out"
+          cp -r ${self}/.claude-plugin "$out/.claude-plugin"
+          cp -r ${self}/skills "$out/skills"
+          cp -r ${self}/commands "$out/commands"
+          cp -r ${self}/agents "$out/agents"
+          cp -r ${self}/hooks "$out/hooks"
+          cp -r ${self}/scripts "$out/scripts"
+          chmod +x "$out"/scripts/*.sh "$out"/hooks/*.sh
 
-          mkdir -p "$out/.claude-plugin"
-          cp "$manifestPath" "$out/.claude-plugin/plugin.json"
+          mkdir -p "$out/bin"
+          cp ${config.packages.ralph-loop}/bin/ralph-loop "$out/bin/ralph-loop"
         '';
       };
 

@@ -74,3 +74,26 @@ Each iteration writes `iteration-<n>.jsonl` (the full raw NDJSON stream) and
 cache dir, deliberately *outside* the target repo so logs never risk being
 accidentally committed into it), plus one line per iteration to
 `ralph.log` there.
+
+## Claude Code plugin
+
+This repo is also a Claude Code plugin (`ralph`) for driving the CLI from
+inside an interactive console session, instead of a terminal:
+
+```
+/plugin marketplace add dmipeck/ralph-loop
+/plugin install ralph
+```
+
+- `/ralph <prompt>` — start a run (or reattach to one already active for
+  this repo), then report progress live as iterations happen.
+- `/ralph-status` — one-shot status check.
+- `/ralph-cancel` — stop the active run.
+- `/ralph-help` — full explanation, including how this differs from the
+  unrelated, official Anthropic `ralph-loop` marketplace plugin.
+
+State lives in `.claude/ralph/state` (git-excluded via `.git/info/exclude`,
+not the repo's own `.gitignore`); only one run may be active per repo at a
+time. A run started via `/ralph` is bound to that session's lifecycle — it
+stops automatically when the session ends, so it can't silently keep
+running (and costing money) after you've left.

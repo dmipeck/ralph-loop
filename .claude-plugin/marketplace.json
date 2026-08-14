@@ -1,0 +1,11 @@
+{
+  "name": "ralph-loop-repo",
+  "owner": { "name": "dmipeck" },
+  "plugins": [
+    {
+      "name": "ralph",
+      "source": "./",
+      "description": "In-console control of the ralph-loop CLI, bound to the Claude Code session lifecycle."
+    }
+  ]
+}

@@ -182,6 +182,26 @@ Match the stop reason (printed on the last line, and derivable from
   applied consistently — check `iteration-<n>.jsonl`'s final assistant
   message text directly.
 
+## Using this from a Claude Code session (the `ralph` plugin)
+
+Everything above is about driving the CLI directly (a terminal, CI, or an
+assistant shelling out to it). If you're inside an interactive Claude Code
+console and this repo's `ralph` plugin is installed, you don't need to do
+any of that by hand — `/ralph <prompt>` starts (or reattaches to) a run and
+reports progress live, `/ralph-status` gives a one-shot check, and
+`/ralph-cancel` stops it. See `/ralph-help` for the full picture.
+
+Two things worth knowing up front:
+- The plugin is named `ralph`, deliberately distinct from the unrelated,
+  official Anthropic `ralph-loop` marketplace plugin (an in-session `Stop`
+  hook loop) that may also be installed — `/ralph-help` explains the
+  difference.
+- A loop started via `/ralph` is bound to that Claude Code session's
+  lifecycle: it's stopped automatically when the session ends, so it never
+  silently keeps running (and costing money) after you've left. This is
+  different from running the bare CLI directly in a terminal, which keeps
+  going until it stops itself or you kill it yourself.
+
 ## Build
 
 If `ralph-loop` isn't already on `PATH` or built in this repo:
