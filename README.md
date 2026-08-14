@@ -18,21 +18,9 @@ live streaming of what claude is doing, per-iteration logs, commit
 detection, a completion-promise check, and stall/cost/iteration limits so a
 stuck run doesn't burn money forever.
 
-## Why not just bash?
-
-An earlier bash prototype of this tool built its `--allowedTools` argument
-from an unquoted shell string. Bash word-split a pattern like `Bash(git *)`
-on its internal space into two garbage tokens before it ever reached argv,
-silently disabling every git-allow rule — five real, paid iterations ran
-against a real project before anyone noticed every `git commit` was being
-denied. In Go, `exec.Command` takes a real `[]string`; there's no shell in
-the loop to word-split anything. See `internal/claude/args_test.go` for the
-regression test that encodes this directly.
-
 ## Build
 
 ```
-nix develop   # or: nix shell nixpkgs#go
 go build -o ralph-loop .
 ```
 
