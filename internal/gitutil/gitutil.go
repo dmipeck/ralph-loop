@@ -45,6 +45,14 @@ func DiffStat(ctx context.Context, repoDir, before, after string) (string, error
 	return run(ctx, repoDir, "diff", "--shortstat", before, after)
 }
 
+// CreateTag creates a lightweight (non-annotated) tag named name
+// pointing at HEAD in repoDir. Best-effort by design: callers should
+// treat a non-nil error as non-fatal, not abort the iteration.
+func CreateTag(ctx context.Context, repoDir, name string) error {
+	_, err := run(ctx, repoDir, "tag", name)
+	return err
+}
+
 // CurrentBranch returns the currently checked-out branch name in repoDir.
 func CurrentBranch(ctx context.Context, repoDir string) (string, error) {
 	return run(ctx, repoDir, "branch", "--show-current")

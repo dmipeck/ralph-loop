@@ -133,6 +133,40 @@ func TestDiffStat(t *testing.T) {
 	}
 }
 
+func TestCreateTag(t *testing.T) {
+	dir := initRepo(t)
+	ctx := context.Background()
+
+	head, err := HeadSHA(ctx, dir)
+	if err != nil {
+		t.Fatalf("HeadSHA: %v", err)
+	}
+
+	if err := CreateTag(ctx, dir, "ralph/iter-1-abc1234"); err != nil {
+		t.Fatalf("CreateTag: %v", err)
+	}
+
+	tagSHA, err := run(ctx, dir, "rev-parse", "ralph/iter-1-abc1234")
+	if err != nil {
+		t.Fatalf("rev-parse tag: %v", err)
+	}
+	if tagSHA != head {
+		t.Errorf("tag points at %q, want HEAD %q", tagSHA, head)
+	}
+}
+
+func TestCreateTag_DuplicateFails(t *testing.T) {
+	dir := initRepo(t)
+	ctx := context.Background()
+
+	if err := CreateTag(ctx, dir, "ralph/iter-1-abc1234"); err != nil {
+		t.Fatalf("CreateTag (first): %v", err)
+	}
+	if err := CreateTag(ctx, dir, "ralph/iter-1-abc1234"); err == nil {
+		t.Error("CreateTag (duplicate) = nil error, want non-nil")
+	}
+}
+
 func TestCheckoutBranch_CreatesThenReuses(t *testing.T) {
 	dir := initRepo(t)
 	ctx := context.Background()
