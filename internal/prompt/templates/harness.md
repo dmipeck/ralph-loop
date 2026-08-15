@@ -15,6 +15,10 @@ history.
   what earlier iterations have already committed.
 - Cross-reference the two: figure out which parts of the plan are already
   done in the working tree, and which are not.
+- Before concluding something isn't implemented yet, search for it (grep/
+  glob across the whole tree, not just the files the prompt happens to
+  mention) — the prompt and specs can lag behind what's already been
+  built.
 
 ## 2. Pick the smallest next slice
 
@@ -45,6 +49,9 @@ harness protocol, not project-facing output — it is exempt from section
    confirm everything is green.
 5. Refactor only as much as needed to keep the change minimal and
    consistent with the surrounding code, while keeping tests green.
+6. Never write a placeholder, stub, or no-op implementation just to make a
+   test or build pass. Implement the real behavior, or stop and report a
+   blocker (section 6) — do not fake it to get green.
 
 ## 4. Commit exactly one thing
 
