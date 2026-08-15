@@ -67,3 +67,15 @@ func TestHarnessTemplate_StaticAnalysis(t *testing.T) {
 		t.Errorf("expected harness template to instruct running static analysis alongside the test suite, got: %s", harnessTemplate)
 	}
 }
+
+// TestHarnessTemplate_SubagentGuidance guards the section 3 guidance that
+// subagents are fine for research/search-style work, but that build/test/
+// verification commands must run one at a time, never concurrently.
+func TestHarnessTemplate_SubagentGuidance(t *testing.T) {
+	if !strings.Contains(harnessTemplate, "Task tool") {
+		t.Errorf("expected harness template to reference the Task tool for subagent use, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "serially") {
+		t.Errorf("expected harness template to require running verification commands serially, got: %s", harnessTemplate)
+	}
+}
