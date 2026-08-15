@@ -1,11 +1,14 @@
 {
-  "description": "ralph plugin: stop this repo's ralph-loop run when its owning session ends; report (never silently kill) any run left over from a previous session at the next session start.",
+  "description": "ralph plugin: stop this repo's ralph-loop run when its owning session ends; report (never silently kill) any run left over from a previous session at the next session start; pre-approve Bash/Monitor invocations of this plugin's own bundled scripts so they never prompt.",
   "hooks": {
     "SessionEnd": [
       { "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/ralph-session-end.sh\"" } ] }
     ],
     "SessionStart": [
       { "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/ralph-session-start.sh\"" } ] }
+    ],
+    "PermissionRequest": [
+      { "matcher": "Bash|Monitor", "hooks": [ { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/ralph-permission-request.sh\"" } ] }
     ]
   }
 }

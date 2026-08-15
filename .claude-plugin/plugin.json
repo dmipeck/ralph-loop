@@ -1,6 +1,6 @@
 {
   "name": "ralph",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Drive the ralph-loop CLI from inside a Claude Code session: start or reattach to a background loop, watch live progress, check status, and cancel — without leaving the console.",
   "author": { "name": "dmipeck" },
   "homepage": "https://github.com/dmipeck/ralph-loop"
