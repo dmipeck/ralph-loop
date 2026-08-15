@@ -221,6 +221,18 @@ Match the stop reason (printed on the last line, and derivable from
   applied consistently — check `iteration-<n>.jsonl`'s final assistant
   message text directly.
 
+### Recovering from a run that's gone sideways
+
+Not every problem shows up as a stop reason — sometimes iterations are
+individually "successful" (a commit, no error) but collectively drifting: a
+tracked plan/todo doc getting thrashed or contradicted, quality visibly
+degrading commit over commit. This isn't something ralph-loop detects for
+you; it's a human judgment call. If `--tag-on-commit` was set, `git tag -l
+'ralph/*'` lists a tag per past commit — `git reset --hard <last-good-tag>`
+gets you back to a known-good state fast, without re-deriving it from `git
+log` by hand. Without tagging enabled, fall back to `git log --oneline` and
+`git reset --hard <sha>` directly.
+
 ## Using this from a Claude Code session (the `ralph` plugin)
 
 Everything above is about driving the CLI directly (a terminal, CI, or an
