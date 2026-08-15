@@ -142,12 +142,25 @@ prints one summary line per iteration and, at the end, why it stopped and
 the total reported cost.
 
 In `--log-dir` (printed in the config summary at the start of every run):
-- `ralph.log` — one line per iteration: timestamp, error/ok, cost,
-  commit-or-not. Read this first to get the shape of a run at a glance.
+- `ralph.log` — one line per iteration: timestamp, error/ok, per-iteration
+  cost, commit-or-not, running cost total across the whole run, and (if a
+  commit was made) its subject line. Read this first to get the shape of a
+  run at a glance.
 - `iteration-<n>.jsonl` — the full raw NDJSON stream-json output for
   iteration `n`. Read this when a summary line looks wrong or a parse
   warning was printed, to see exactly what claude did/said.
 - `iteration-<n>.stderr.log` — that iteration's stderr.
+
+`run.stdout.log` (the loop's own live output) additionally carries three
+greppable structural markers, one per moment worth reporting live — used
+by `/ralph`'s Monitor-based live reporting, not just for human reading:
+- `RALPH_ITERATION_START iter=N total_cost_so_far=$X` — an iteration just
+  started; total cost is everything spent by *prior* iterations.
+- `RALPH_PLAN iter=N: <text>` — the first `<plan>...</plan>` tag claude
+  output this iteration, i.e. the slice it decided to work on.
+- `RALPH_CHANGES iter=N commit=<sha> subject="<msg>" diffstat="<stat>"` —
+  printed the moment a commit is detected, before the iteration's summary
+  line.
 
 ## Diagnosing a run that stopped
 

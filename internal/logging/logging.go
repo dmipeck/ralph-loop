@@ -77,10 +77,15 @@ func (s *SummaryLogger) Append(line string) error {
 
 // FormatSummaryLine builds one summary-log line in the same shape the
 // original bash prototype used, for continuity when reading old and new
-// logs side by side.
-func FormatSummaryLine(ts time.Time, iteration int, isError bool, costUSD float64, committed string) string {
-	return fmt.Sprintf(
-		"%s | iter=%d | is_error=%v | cost=$%.6f | committed=%s",
-		ts.UTC().Format(time.RFC3339), iteration, isError, costUSD, committed,
+// logs side by side, extended with the running cost total across the whole
+// run and (when a commit was made) its subject line.
+func FormatSummaryLine(ts time.Time, iteration int, isError bool, costUSD float64, committed string, totalCostUSD float64, commitSubject string) string {
+	line := fmt.Sprintf(
+		"%s | iter=%d | is_error=%v | cost=$%.6f | committed=%s | total_cost=$%.6f",
+		ts.UTC().Format(time.RFC3339), iteration, isError, costUSD, committed, totalCostUSD,
 	)
+	if commitSubject != "" {
+		line += fmt.Sprintf(" | subject=%q", commitSubject)
+	}
+	return line
 }

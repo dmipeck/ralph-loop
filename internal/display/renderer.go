@@ -7,11 +7,31 @@ package display
 import (
 	"fmt"
 	"io"
+	"regexp"
+	"strings"
 
 	"github.com/dmipeck/ralph-loop/internal/claude"
 )
 
 const defaultTruncateAt = 160
+
+// planRe finds the FIRST <plan>...</plan> tag in a block of text — same
+// tagged-span convention as loop.ExtractPromise, but for the "what am I
+// about to work on this iteration" signal claude reports mid-turn rather
+// than the end-of-run completion promise.
+var planRe = regexp.MustCompile(`(?s)<plan>(.*?)</plan>`)
+
+var planWhitespaceRe = regexp.MustCompile(`\s+`)
+
+// ExtractPlan returns the trimmed, whitespace-collapsed contents of the
+// first <plan>...</plan> tag in text, or "" if there is none.
+func ExtractPlan(text string) string {
+	m := planRe.FindStringSubmatch(text)
+	if m == nil {
+		return ""
+	}
+	return planWhitespaceRe.ReplaceAllString(strings.TrimSpace(m[1]), " ")
+}
 
 // Renderer implements claude.Renderer, writing truncated human-readable
 // lines to Out as events arrive. The full untruncated NDJSON is persisted
@@ -21,6 +41,20 @@ const defaultTruncateAt = 160
 type Renderer struct {
 	Out        io.Writer
 	TruncateAt int // 0 = use defaultTruncateAt
+
+	// Iteration is the current iteration number, set by BeginIteration.
+	// Used only to label the RALPH_PLAN marker line below.
+	Iteration int
+
+	planReported bool // whether RALPH_PLAN has already fired this iteration
+}
+
+// BeginIteration resets the per-iteration state (the current iteration
+// number and whether a plan has been reported yet) — call this once before
+// each iteration's claude.RunIteration.
+func (r *Renderer) BeginIteration(iteration int) {
+	r.Iteration = iteration
+	r.planReported = false
 }
 
 func (r *Renderer) truncateAt() int {
@@ -62,6 +96,12 @@ func (r *Renderer) Render(ev claude.Event) {
 			switch block.Type {
 			case "text":
 				prefixed(r.Out, "  ", block.Text, n)
+				if !r.planReported {
+					if plan := ExtractPlan(block.Text); plan != "" {
+						r.planReported = true
+						fmt.Fprintf(r.Out, "RALPH_PLAN iter=%d: %s\n", r.Iteration, plan)
+					}
+				}
 			case "tool_use":
 				input := truncate(string(block.Input), n)
 				fmt.Fprintf(r.Out, "  > %s %s\n", block.Name, input)

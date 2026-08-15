@@ -63,3 +63,19 @@ still going) and:
 Remind the user this loop's lifecycle is tied to this session: it stops
 automatically if this session ends — it's not a fire-and-forget background
 job that outlives the console.
+
+Each `Monitor` notification is one raw line from the loop's own log —
+narrate it in plain language rather than relaying it verbatim. Use this
+mapping:
+
+- `RALPH_ITERATION_START iter=N total_cost_so_far=$X` — "Starting
+  iteration N (~$X spent so far)."
+- `RALPH_PLAN iter=N: <text>` — "Ralph's plan for iteration N: `<text>`"
+- `RALPH_CHANGES iter=N commit=<sha> subject="<msg>" diffstat="<stat>"` —
+  "Iteration N changed: `<msg>` (`<stat>`)."
+- The `... | iter=N | is_error=... | cost=$X | committed=... |
+  total_cost=$Y | subject="<msg>"` summary line — "Iteration N complete:
+  {no errors|error}, cost $X, committed as `<sha>` (`<msg>`). Running
+  total: N iterations, ~$Y. Still watching."
+- Anything else (crash/heartbeat/stop lines) — relay plainly, no need to
+  reformat.

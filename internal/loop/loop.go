@@ -21,11 +21,13 @@ import (
 
 // Outcome is what one iteration produced, as input to Decide.
 type Outcome struct {
-	Iteration int
-	Result    *claude.ResultEvent // nil if the process crashed / never emitted a result event
-	RunErr    error               // non-nil if the claude subprocess itself failed
-	Committed bool
-	CommitRef string // short SHA, set iff Committed
+	Iteration     int
+	Result        *claude.ResultEvent // nil if the process crashed / never emitted a result event
+	RunErr        error               // non-nil if the claude subprocess itself failed
+	Committed     bool
+	CommitRef     string // short SHA, set iff Committed
+	CommitSubject string // commit message subject line, best-effort, set iff Committed
+	DiffStat      string // `git diff --shortstat` summary, best-effort, set iff Committed
 }
 
 // Decision is what Decide concluded after folding in one Outcome.
@@ -133,12 +135,18 @@ func (c *Controller) Run(ctx context.Context, out io.Writer) error {
 		}
 
 		fmt.Fprintf(out, "── Iteration %d ──────────────────────────────────────\n", iteration)
+		fmt.Fprintf(out, "RALPH_ITERATION_START iter=%d total_cost_so_far=$%.4f\n", iteration, c.totalCostUSD)
 
 		outcome, err := c.runOneIteration(ctx, claudeBinary, iteration, out, renderer)
 		if err != nil && outcome.RunErr == nil {
 			// A logging/IO-level failure distinct from the subprocess itself.
 			return err
 		}
+
+		// Decide first: it accumulates c.totalCostUSD as a side effect, and
+		// the summary line below wants that running total, not just this
+		// iteration's own cost.
+		decision := c.Decide(outcome)
 
 		isError := outcome.Result != nil && outcome.Result.IsError
 		cost := 0.0
@@ -149,13 +157,12 @@ func (c *Controller) Run(ctx context.Context, out io.Writer) error {
 		if outcome.Committed {
 			committed = fmt.Sprintf("yes (%s)", outcome.CommitRef)
 		}
-		line := logging.FormatSummaryLine(time.Now(), iteration, isError, cost, committed)
+		line := logging.FormatSummaryLine(time.Now(), iteration, isError, cost, committed, c.totalCostUSD, outcome.CommitSubject)
 		fmt.Fprintln(out, line)
 		if err := summary.Append(line); err != nil {
 			fmt.Fprintf(out, "warning: failed to write summary log: %v\n", err)
 		}
 
-		decision := c.Decide(outcome)
 		if decision.Stop {
 			fmt.Fprintf(out, "\nRalph loop stopped after %d iteration(s): %s\n", iteration, decision.Reason)
 			fmt.Fprintf(out, "Total reported cost: $%.4f\n", c.totalCostUSD)
@@ -175,7 +182,7 @@ func (c *Controller) Run(ctx context.Context, out io.Writer) error {
 
 // runOneIteration performs the actual subprocess spawn + git before/after
 // comparison for a single iteration.
-func (c *Controller) runOneIteration(ctx context.Context, claudeBinary string, iteration int, out io.Writer, renderer claude.Renderer) (Outcome, error) {
+func (c *Controller) runOneIteration(ctx context.Context, claudeBinary string, iteration int, out io.Writer, renderer *display.Renderer) (Outcome, error) {
 	before, err := gitutil.HeadSHA(ctx, c.cfg.RepoDir)
 	if err != nil {
 		return Outcome{Iteration: iteration}, fmt.Errorf("git rev-parse HEAD (before): %w", err)
@@ -194,6 +201,8 @@ func (c *Controller) runOneIteration(ctx context.Context, claudeBinary string, i
 
 	fullPrompt := prompt.Compose(c.cfg.CompletionPromise, promptText)
 	args := claude.BuildArgs(c.cfg, fullPrompt)
+
+	renderer.BeginIteration(iteration)
 
 	var parseWarnings int
 	onParseError := func(line string, perr error) {
@@ -223,6 +232,14 @@ func (c *Controller) runOneIteration(ctx context.Context, claudeBinary string, i
 		if short, err := gitutil.LastCommitShort(ctx, c.cfg.RepoDir); err == nil {
 			outcome.CommitRef = short
 		}
+		if subject, err := gitutil.CommitSubject(ctx, c.cfg.RepoDir); err == nil {
+			outcome.CommitSubject = subject
+		}
+		if stat, err := gitutil.DiffStat(ctx, c.cfg.RepoDir, before, after); err == nil {
+			outcome.DiffStat = stat
+		}
+		fmt.Fprintf(out, "RALPH_CHANGES iter=%d commit=%s subject=%q diffstat=%q\n",
+			iteration, outcome.CommitRef, outcome.CommitSubject, outcome.DiffStat)
 	}
 
 	return outcome, nil
