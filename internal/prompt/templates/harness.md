@@ -19,6 +19,11 @@ history.
   glob across the whole tree, not just the files the prompt happens to
   mention) — the prompt and specs can lag behind what's already been
   built.
+- If the project has a CLAUDE.md, AGENT.md, or similar
+  standing-instructions file, treat its build/test commands and notes as
+  authoritative, and feel free to append newly discovered learnings to it
+  — never a status or progress report, just durable facts a future
+  iteration would want to know.
 
 ## 2. Pick the smallest next slice
 
