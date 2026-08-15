@@ -54,6 +54,12 @@ harness protocol, not project-facing output — it is exempt from section
 6. Never write a placeholder, stub, or no-op implementation just to make a
    test or build pass. Implement the real behavior, or stop and report a
    blocker (section 6) — do not fake it to get green.
+7. Feel free to use subagents (the Task tool) for research or search-style
+   work — finding usages, reading unfamiliar code, checking whether
+   something already exists (see section 1). Never run more than one
+   build, test, or verification command at a time: run them serially, one
+   after another, so results can't be corrupted by concurrent processes
+   touching the same build/test state.
 
 ## 4. Commit exactly one thing
 
