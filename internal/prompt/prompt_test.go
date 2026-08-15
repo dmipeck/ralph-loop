@@ -58,3 +58,12 @@ func TestHarnessTemplate_NoPlaceholdersOrStubs(t *testing.T) {
 		t.Errorf("expected harness template to mention avoiding stub implementations, got: %s", harnessTemplate)
 	}
 }
+
+// TestHarnessTemplate_StaticAnalysis guards the section 3 broadening of
+// verification beyond the test suite to also cover static analysis, so a
+// slice isn't considered done until a type-checker/linter is clean too.
+func TestHarnessTemplate_StaticAnalysis(t *testing.T) {
+	if !strings.Contains(harnessTemplate, "type-checker, linter, or other static-analysis") {
+		t.Errorf("expected harness template to instruct running static analysis alongside the test suite, got: %s", harnessTemplate)
+	}
+}
