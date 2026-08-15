@@ -28,6 +28,12 @@ type Outcome struct {
 	CommitRef     string // short SHA, set iff Committed
 	CommitSubject string // commit message subject line, best-effort, set iff Committed
 	DiffStat      string // `git diff --shortstat` summary, best-effort, set iff Committed
+	Tag           string // set iff a tag was created this iteration (only possible if Committed)
+}
+
+// tagNameForCommit builds this iteration's git tag name.
+func tagNameForCommit(iteration int, commitRef string) string {
+	return fmt.Sprintf("ralph/iter-%d-%s", iteration, commitRef)
 }
 
 // Decision is what Decide concluded after folding in one Outcome.
@@ -238,8 +244,16 @@ func (c *Controller) runOneIteration(ctx context.Context, claudeBinary string, i
 		if stat, err := gitutil.DiffStat(ctx, c.cfg.RepoDir, before, after); err == nil {
 			outcome.DiffStat = stat
 		}
-		fmt.Fprintf(out, "RALPH_CHANGES iter=%d commit=%s subject=%q diffstat=%q\n",
-			iteration, outcome.CommitRef, outcome.CommitSubject, outcome.DiffStat)
+		if c.cfg.TagOnCommit {
+			tagName := tagNameForCommit(iteration, outcome.CommitRef)
+			if err := gitutil.CreateTag(ctx, c.cfg.RepoDir, tagName); err == nil {
+				outcome.Tag = tagName
+			} else {
+				fmt.Fprintf(out, "warning: failed to create tag %q: %v\n", tagName, err)
+			}
+		}
+		fmt.Fprintf(out, "RALPH_CHANGES iter=%d commit=%s subject=%q diffstat=%q tag=%q\n",
+			iteration, outcome.CommitRef, outcome.CommitSubject, outcome.DiffStat, outcome.Tag)
 	}
 
 	return outcome, nil

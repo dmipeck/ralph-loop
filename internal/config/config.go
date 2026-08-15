@@ -36,8 +36,9 @@ type Config struct {
 
 	PreflightCmd string // arbitrary shell command; must exit 0 before each iteration
 
-	Branch string // optional: checked out/created before the loop starts
-	LogDir string
+	Branch      string // optional: checked out/created before the loop starts
+	TagOnCommit bool   // optional: tag every successful commit at HEAD
+	LogDir      string
 
 	DryRun bool
 }

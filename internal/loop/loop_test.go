@@ -142,3 +142,11 @@ func TestDecide_ZeroDisablesStallAndIterationLimits(t *testing.T) {
 		}
 	}
 }
+
+func TestTagNameForCommit(t *testing.T) {
+	got := tagNameForCommit(7, "a4e80c3")
+	want := "ralph/iter-7-a4e80c3"
+	if got != want {
+		t.Fatalf("tagNameForCommit(7, %q) = %q, want %q", "a4e80c3", got, want)
+	}
+}
