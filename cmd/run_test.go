@@ -5,6 +5,20 @@ import (
 	"testing"
 )
 
+// TestTagOnCommitFlag_RegisteredWithDefaultFalse guards the --tag-on-commit
+// flag's registration: opt-in git tagging must default to off, consistent
+// with --branch/--preflight-cmd already being explicit opt-ins for anything
+// that shapes git history.
+func TestTagOnCommitFlag_RegisteredWithDefaultFalse(t *testing.T) {
+	f := rootCmd.Flags().Lookup("tag-on-commit")
+	if f == nil {
+		t.Fatal("--tag-on-commit flag not registered")
+	}
+	if f.DefValue != "false" {
+		t.Errorf("--tag-on-commit default = %q, want %q", f.DefValue, "false")
+	}
+}
+
 // TestMergeUnique_PreservesBaselineAndDedupes is a regression test for a
 // real bug found during manual smoke testing: pflag's StringArrayVar
 // *replaces* its default value on the first occurrence of a repeatable
