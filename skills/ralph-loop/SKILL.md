@@ -137,6 +137,10 @@ Safety / environment:
 - `--branch` — checks out (creating if needed) this branch before the loop
   starts, using your own git permissions, not claude's. Always set this for
   an unattended run so commits don't land straight on `main`/`master`.
+- `--tag-on-commit` (default off) — after every successful commit, create a
+  lightweight git tag (`ralph/iter-<n>-<sha>`) at HEAD — free, cheap rollback
+  points. Purely additive and best-effort: a tag-creation failure never
+  aborts the iteration or the run, it just prints a warning.
 
 Other:
 - `--completion-promise` (default: an internal phrase) — the exact phrase
