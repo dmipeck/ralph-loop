@@ -28,3 +28,12 @@ func TestCompose_IncludesUserPrompt(t *testing.T) {
 		t.Errorf("expected composed prompt to include the user's own prompt text, got: %s", got)
 	}
 }
+
+// TestHarnessTemplate_UpdatesTrackedPlanDoc guards the living plan-doc
+// discipline bullet in section 4: when the project prompt points at a
+// tracked plan/todo/roadmap document, each commit should update it too.
+func TestHarnessTemplate_UpdatesTrackedPlanDoc(t *testing.T) {
+	if !strings.Contains(harnessTemplate, "tracked plan/todo/roadmap") {
+		t.Errorf("expected harness template to instruct updating a tracked plan/todo/roadmap doc, got: %s", harnessTemplate)
+	}
+}

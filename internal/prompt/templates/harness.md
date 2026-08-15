@@ -63,6 +63,13 @@ iteration; do not touch it now.
   staging it — do **not** edit the project's own `.gitignore` for this,
   since that file is itself part of the project and shared with everyone
   who clones it.
+- If the project prompt points at a tracked plan/todo/roadmap document
+  that's already part of the repo (e.g. `docs/ROADMAP.md`, `PLAN.md`) — as
+  opposed to the `--prompt-file` itself, or any scratch file of your own —
+  update it as part of this same commit: mark off what this slice just
+  finished and append any newly discovered follow-up work. Skip this if
+  the project prompt doesn't reference such a doc; nothing here asks you
+  to invent one.
 - Write a commit message describing that one change and referencing the
   relevant part of the project prompt.
 - `git commit`.
