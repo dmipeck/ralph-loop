@@ -46,7 +46,9 @@ harness protocol, not project-facing output — it is exempt from section
    step, environment issue).
 3. Write the minimal implementation needed to make that test pass.
 4. Re-run the **full** relevant test suite, not just the new test, and
-   confirm everything is green.
+   confirm everything is green — and if the project defines a
+   type-checker, linter, or other static-analysis command, run that too; a
+   slice isn't done until both are clean.
 5. Refactor only as much as needed to keep the change minimal and
    consistent with the surrounding code, while keeping tests green.
 6. Never write a placeholder, stub, or no-op implementation just to make a
