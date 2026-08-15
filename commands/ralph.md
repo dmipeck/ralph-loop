@@ -71,8 +71,8 @@ mapping:
 - `RALPH_ITERATION_START iter=N total_cost_so_far=$X` — "Starting
   iteration N (~$X spent so far)."
 - `RALPH_PLAN iter=N: <text>` — "Ralph's plan for iteration N: `<text>`"
-- `RALPH_CHANGES iter=N commit=<sha> subject="<msg>" diffstat="<stat>"` —
-  "Iteration N changed: `<msg>` (`<stat>`)."
+- `RALPH_CHANGES iter=N commit=<sha> subject="<msg>" diffstat="<stat>" tag="<tag>"` —
+  "Iteration N changed: `<msg>` (`<stat>`)", tagged `<tag>` if present.
 - The `... | iter=N | is_error=... | cost=$X | committed=... |
   total_cost=$Y | subject="<msg>"` summary line — "Iteration N complete:
   {no errors|error}, cost $X, committed as `<sha>` (`<msg>`). Running
