@@ -47,6 +47,7 @@ var (
 	maxTotalCostUSD      float64
 	preflightCmd         string
 	branch               string
+	tagOnCommit          bool
 	logDir               string
 	dryRun               bool
 )
@@ -105,6 +106,7 @@ func init() {
 	flags.Float64Var(&maxTotalCostUSD, "max-total-cost-usd", 0, "Stop once cumulative reported cost across iterations reaches this, 0 = unset")
 	flags.StringVar(&preflightCmd, "preflight-cmd", "", "Shell command that must exit 0 before each iteration, or the run aborts before spawning claude at all")
 	flags.StringVar(&branch, "branch", "", "Checkout/create this branch in the current repo before the loop starts")
+	flags.BoolVar(&tagOnCommit, "tag-on-commit", false, "Create a lightweight git tag (ralph/iter-<n>-<sha>) at HEAD after every successful commit")
 	flags.StringVar(&logDir, "log-dir", "", "Directory for iteration logs and the summary log (default: a subdirectory of the OS cache dir, deliberately outside the repo)")
 	flags.BoolVar(&dryRun, "dry-run", false, "Print what would run and exit")
 
@@ -166,6 +168,7 @@ func runRoot(cmd *cobra.Command, _ []string) error {
 		MaxTotalCostUSD:      maxTotalCostUSD,
 		PreflightCmd:         preflightCmd,
 		Branch:               branch,
+		TagOnCommit:          tagOnCommit,
 		LogDir:               resolvedLogDir,
 		DryRun:               dryRun,
 	}
