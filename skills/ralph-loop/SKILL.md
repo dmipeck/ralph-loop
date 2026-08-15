@@ -32,6 +32,28 @@ So the prompt file matters more than any flag. If iterations don't converge,
 the fix is almost always the prompt (ordering, scope-per-commit, what counts
 as "done"), not a flag.
 
+## Recommended project structure (optional)
+
+ralph-loop doesn't require any particular file layout — the `--prompt`/
+`--prompt-file` text and git history are the only hard requirements. Two
+optional, purely-convention docs make longer runs easier for both the loop
+and the human watching it, if the target project already uses (or wants to
+adopt) them:
+
+- **A tracked plan/todo doc** (e.g. `docs/ROADMAP.md`, `PLAN.md`) distinct
+  from `--prompt-file` itself — a living, prioritized todo list. If the
+  project prompt references one, the harness already tells each iteration
+  to update it (mark off finished work, append newly discovered
+  follow-up) alongside its commit.
+- **A standing build/test-commands + learnings doc** (`CLAUDE.md`,
+  `AGENT.md`, or similar) — durable facts a future iteration should know
+  (how to build, quirks, gotchas), never a status/progress report. If
+  present, the harness tells each iteration to treat it as authoritative
+  and append new learnings to it.
+
+Neither doc is scaffolded by ralph-loop itself; both are conventions the
+harness knows to look for and update if present.
+
 ## Workflow
 
 Run it from inside the target repo — there's no `--repo-dir`, it always

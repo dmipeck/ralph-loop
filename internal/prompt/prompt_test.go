@@ -79,3 +79,15 @@ func TestHarnessTemplate_SubagentGuidance(t *testing.T) {
 		t.Errorf("expected harness template to require running verification commands serially, got: %s", harnessTemplate)
 	}
 }
+
+// TestHarnessTemplate_StandingInstructionsDoc guards the section 1 bullet
+// telling each iteration to treat a project's own CLAUDE.md/AGENT.md as
+// authoritative and append newly discovered learnings to it.
+func TestHarnessTemplate_StandingInstructionsDoc(t *testing.T) {
+	if !strings.Contains(harnessTemplate, "AGENT.md") && !strings.Contains(harnessTemplate, "CLAUDE.md") {
+		t.Errorf("expected harness template to reference AGENT.md or CLAUDE.md, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "learnings") {
+		t.Errorf("expected harness template to mention appending learnings to a standing-instructions doc, got: %s", harnessTemplate)
+	}
+}
