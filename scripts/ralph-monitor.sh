@@ -1,11 +1,12 @@
 #!/bin/bash
 # Run by the Monitor tool's `command` (see commands/ralph.md step 3). Each
 # stdout line becomes a chat notification, so this tails only structural
-# markers — iteration-start banners, the FormatSummaryLine summary shape,
-# and the loop's own terminal/error strings — never the full per-tool-call
-# renderer stream. Explicitly covers crash/hang paths, not just the happy
-# path: silent process death with no clean stop message is reported as a
-# crash, and a long silence while still running gets a heartbeat line.
+# markers — iteration-start banners, RALPH_ITERATION_START/RALPH_PLAN/
+# RALPH_CHANGES, the FormatSummaryLine summary shape, and the loop's own
+# terminal/error strings — never the full per-tool-call renderer stream.
+# Explicitly covers crash/hang paths, not just the happy path: silent
+# process death with no clean stop message is reported as a crash, and a
+# long silence while still running gets a heartbeat line.
 #
 # Arg: path to the ralph state file.
 set -uo pipefail
@@ -28,7 +29,7 @@ for _ in $(seq 1 20); do
 done
 
 tail -n +1 -F "$STDOUT_LOG" 2>/dev/null | grep -E --line-buffered \
-  '^── Iteration [0-9]+ ──|^[0-9-]+T[0-9:]+Z \| iter=|^Ralph loop stopped after|^Interrupted (before|after) iteration|claude exited with an error|produced no result event|Preflight command failed' &
+  '^── Iteration [0-9]+ ──|^RALPH_ITERATION_START |^RALPH_PLAN |^RALPH_CHANGES |^[0-9-]+T[0-9:]+Z \| iter=|^Ralph loop stopped after|^Interrupted (before|after) iteration|claude exited with an error|produced no result event|Preflight command failed' &
 TAIL_PID=$!
 
 LAST_HEARTBEAT=$(date +%s)

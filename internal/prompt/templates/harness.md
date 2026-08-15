@@ -27,6 +27,12 @@ From what remains, choose the single smallest next piece of work that is:
   prompt lays out, but feel free to break any single step into smaller
   sub-steps if it's too big for one commit.
 
+Once you've picked it, before doing anything else, output one line of
+plain text: `<plan>one-sentence description of the slice you're about to
+work on</plan>`. Like the completion-promise tag in section 8, this is
+harness protocol, not project-facing output — it is exempt from section
+5's "never leak loop vocabulary" rule.
+
 ## 3. Implement it with strict TDD
 
 1. Write or extend a failing test first, matching this project's existing
