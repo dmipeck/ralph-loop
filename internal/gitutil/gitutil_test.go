@@ -73,6 +73,66 @@ func TestHeadSHA_ChangesAfterCommit(t *testing.T) {
 	}
 }
 
+func TestCommitSubject(t *testing.T) {
+	dir := initRepo(t)
+	ctx := context.Background()
+
+	if err := os.WriteFile(filepath.Join(dir, "file.txt"), []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"add", "file.txt"}, {"commit", "-q", "-m", "add file\n\nmore body text"}} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t.com", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t.com")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	subject, err := CommitSubject(ctx, dir)
+	if err != nil {
+		t.Fatalf("CommitSubject: %v", err)
+	}
+	if subject != "add file" {
+		t.Errorf("CommitSubject = %q, want %q", subject, "add file")
+	}
+}
+
+func TestDiffStat(t *testing.T) {
+	dir := initRepo(t)
+	ctx := context.Background()
+
+	before, err := HeadSHA(ctx, dir)
+	if err != nil {
+		t.Fatalf("HeadSHA (before): %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(dir, "file.txt"), []byte("hello\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"add", "file.txt"}, {"commit", "-q", "-m", "add file"}} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t.com", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t.com")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+
+	after, err := HeadSHA(ctx, dir)
+	if err != nil {
+		t.Fatalf("HeadSHA (after): %v", err)
+	}
+
+	stat, err := DiffStat(ctx, dir, before, after)
+	if err != nil {
+		t.Fatalf("DiffStat: %v", err)
+	}
+	if stat == "" {
+		t.Error("expected a non-empty diffstat for a changed file")
+	}
+}
+
 func TestCheckoutBranch_CreatesThenReuses(t *testing.T) {
 	dir := initRepo(t)
 	ctx := context.Background()

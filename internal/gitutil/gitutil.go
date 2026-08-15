@@ -32,6 +32,19 @@ func LastCommitShort(ctx context.Context, repoDir string) (string, error) {
 	return run(ctx, repoDir, "log", "-1", "--format=%h")
 }
 
+// CommitSubject returns the subject line (first line) of HEAD's commit
+// message, for display.
+func CommitSubject(ctx context.Context, repoDir string) (string, error) {
+	return run(ctx, repoDir, "log", "-1", "--format=%s")
+}
+
+// DiffStat returns a one-line `--shortstat` summary (files changed,
+// insertions, deletions) of everything between before and after, for
+// display. Empty (with no error) if the two refs are identical.
+func DiffStat(ctx context.Context, repoDir, before, after string) (string, error) {
+	return run(ctx, repoDir, "diff", "--shortstat", before, after)
+}
+
 // CurrentBranch returns the currently checked-out branch name in repoDir.
 func CurrentBranch(ctx context.Context, repoDir string) (string, error) {
 	return run(ctx, repoDir, "branch", "--show-current")

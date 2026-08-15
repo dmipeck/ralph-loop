@@ -38,7 +38,7 @@ if ralph_pid_alive "$PID"; then
 
   CURRENT_ITERATION=""
   if [[ -f "$STDOUT_LOG" ]]; then
-    LAST_STARTED=$(grep -oE '^── Iteration [0-9]+ ──' "$STDOUT_LOG" 2>/dev/null | grep -oE '[0-9]+' | tail -1)
+    LAST_STARTED=$(grep -oE '^RALPH_ITERATION_START iter=[0-9]+' "$STDOUT_LOG" 2>/dev/null | grep -oE '[0-9]+' | tail -1)
     if [[ -n "$LAST_STARTED" && "$LAST_STARTED" -gt "$ITERATIONS_COMPLETED" ]]; then
       CURRENT_ITERATION="$LAST_STARTED"
     fi

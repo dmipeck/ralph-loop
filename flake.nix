@@ -17,11 +17,11 @@
 
         packages.ralph-loop = pkgs.buildGoModule {
           pname = "ralph-loop";
-          version = "0.2.0";
+          version = "0.3.0";
           src = self;
           vendorHash = "sha256-7K17JaXFsjf163g5PXCb5ng2gYdotnZ2IDKk8KFjNj0=";
           nativeCheckInputs = [ pkgs.git ];
-          ldflags = [ "-X github.com/dmipeck/ralph-loop/cmd.version=0.2.0" ];
+          ldflags = [ "-X github.com/dmipeck/ralph-loop/cmd.version=0.3.0" ];
         };
 
         # A complete, installable `ralph` plugin bundle: the repo's checked-in
