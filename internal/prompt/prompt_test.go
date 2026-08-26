@@ -29,16 +29,7 @@ func TestCompose_IncludesUserPrompt(t *testing.T) {
 	}
 }
 
-// TestHarnessTemplate_UpdatesTrackedPlanDoc guards the living plan-doc
-// discipline bullet in section 4: when the project prompt points at a
-// tracked plan/todo/roadmap document, each commit should update it too.
-func TestHarnessTemplate_UpdatesTrackedPlanDoc(t *testing.T) {
-	if !strings.Contains(harnessTemplate, "tracked plan/todo/roadmap") {
-		t.Errorf("expected harness template to instruct updating a tracked plan/todo/roadmap doc, got: %s", harnessTemplate)
-	}
-}
-
-// TestHarnessTemplate_SearchBeforeAssuming guards the section 1 guardrail
+// TestHarnessTemplate_SearchBeforeAssuming guards the section 2 guardrail
 // telling each iteration to search the whole tree before concluding
 // something isn't implemented yet, since the prompt/specs can lag behind
 // what's already been built.
@@ -48,7 +39,7 @@ func TestHarnessTemplate_SearchBeforeAssuming(t *testing.T) {
 	}
 }
 
-// TestHarnessTemplate_NoPlaceholdersOrStubs guards the section 3 guardrail
+// TestHarnessTemplate_NoPlaceholdersOrStubs guards the section 4 guardrail
 // against faking green tests/builds with placeholder or stub implementations.
 func TestHarnessTemplate_NoPlaceholdersOrStubs(t *testing.T) {
 	if !strings.Contains(harnessTemplate, "placeholder") {
@@ -59,7 +50,7 @@ func TestHarnessTemplate_NoPlaceholdersOrStubs(t *testing.T) {
 	}
 }
 
-// TestHarnessTemplate_StaticAnalysis guards the section 3 broadening of
+// TestHarnessTemplate_StaticAnalysis guards the section 4 broadening of
 // verification beyond the test suite to also cover static analysis, so a
 // slice isn't considered done until a type-checker/linter is clean too.
 func TestHarnessTemplate_StaticAnalysis(t *testing.T) {
@@ -68,7 +59,7 @@ func TestHarnessTemplate_StaticAnalysis(t *testing.T) {
 	}
 }
 
-// TestHarnessTemplate_SubagentGuidance guards the section 3 guidance that
+// TestHarnessTemplate_SubagentGuidance guards the section 4 guidance that
 // subagents are fine for research/search-style work, but that build/test/
 // verification commands must run one at a time, never concurrently.
 func TestHarnessTemplate_SubagentGuidance(t *testing.T) {
@@ -80,7 +71,7 @@ func TestHarnessTemplate_SubagentGuidance(t *testing.T) {
 	}
 }
 
-// TestHarnessTemplate_StandingInstructionsDoc guards the section 1 bullet
+// TestHarnessTemplate_StandingInstructionsDoc guards the section 2 bullet
 // telling each iteration to treat a project's own CLAUDE.md/AGENT.md as
 // authoritative and append newly discovered learnings to it.
 func TestHarnessTemplate_StandingInstructionsDoc(t *testing.T) {
@@ -89,5 +80,55 @@ func TestHarnessTemplate_StandingInstructionsDoc(t *testing.T) {
 	}
 	if !strings.Contains(harnessTemplate, "learnings") {
 		t.Errorf("expected harness template to mention appending learnings to a standing-instructions doc, got: %s", harnessTemplate)
+	}
+}
+
+// TestHarnessTemplate_FreshWorktreeAndBranch guards the new section 1
+// requirement that each iteration starts its work in a fresh git worktree
+// on a new branch, rather than committing directly on the branch the loop
+// started on.
+func TestHarnessTemplate_FreshWorktreeAndBranch(t *testing.T) {
+	if !strings.Contains(harnessTemplate, "worktree") {
+		t.Errorf("expected harness template to instruct starting work in a fresh git worktree, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "new branch") {
+		t.Errorf("expected harness template to instruct starting work on a new branch, got: %s", harnessTemplate)
+	}
+}
+
+// TestHarnessTemplate_OpensPRBeforeWork guards the section 1 instruction
+// to push the new branch and open a draft PR/MR for it before starting
+// implementation, whenever a matching CLI/remote is available — and to
+// skip that step silently otherwise, rather than blocking the iteration.
+func TestHarnessTemplate_OpensPRBeforeWork(t *testing.T) {
+	if !strings.Contains(harnessTemplate, "gh pr create") {
+		t.Errorf("expected harness template to reference gh pr create, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "glab mr create") {
+		t.Errorf("expected harness template to reference glab mr create, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "skip this step silently") {
+		t.Errorf("expected harness template to allow silently skipping PR/MR creation when unavailable, got: %s", harnessTemplate)
+	}
+}
+
+// TestHarnessTemplate_PushesEachCommit guards the section 5 requirement
+// that each iteration pushes its commit immediately, rather than leaving
+// it local-only for a future iteration to push.
+func TestHarnessTemplate_PushesEachCommit(t *testing.T) {
+	if !strings.Contains(harnessTemplate, "`git push`") {
+		t.Errorf("expected harness template to instruct running git push after each commit, got: %s", harnessTemplate)
+	}
+}
+
+// TestHarnessTemplate_PromiseOnlyAfterCommitAndPush guards the section 9
+// requirement that the completion promise may only be reported after this
+// iteration's changes have actually been committed and pushed.
+func TestHarnessTemplate_PromiseOnlyAfterCommitAndPush(t *testing.T) {
+	if !strings.Contains(harnessTemplate, "must not** output this promise") {
+		t.Errorf("expected harness template to forbid reporting completion before commit/push, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "committed and pushed") {
+		t.Errorf("expected harness template to require commit and push before the completion promise, got: %s", harnessTemplate)
 	}
 }

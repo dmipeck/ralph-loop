@@ -41,10 +41,11 @@ and the human watching it, if the target project already uses (or wants to
 adopt) them:
 
 - **A tracked plan/todo doc** (e.g. `docs/ROADMAP.md`, `PLAN.md`) distinct
-  from `--prompt-file` itself — a living, prioritized todo list. If the
-  project prompt references one, the harness already tells each iteration
-  to update it (mark off finished work, append newly discovered
-  follow-up) alongside its commit.
+  from `--prompt-file` itself — a living, prioritized todo list. The
+  harness tells each iteration to read it while orienting and
+  cross-reference it against `git log`, but keeping it updated is the
+  project prompt's job, not something the harness does automatically —
+  tell the prompt to update it as part of each slice if you want that.
 - **A standing build/test-commands + learnings doc** (`CLAUDE.md`,
   `AGENT.md`, or similar) — durable facts a future iteration should know
   (how to build, quirks, gotchas), never a status/progress report. If
