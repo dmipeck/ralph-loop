@@ -20,21 +20,42 @@ starting a second one.
 
 ## 1. Resolve arguments
 
+`ralph-loop` is always started with `--prompt-file .claude/ralph/prompt.md`
+— never a raw `--prompt` literal, and never a `--prompt-file` pointing
+anywhere else. Every input path below ends by getting the prompt content
+into that one file (`mkdir -p .claude/ralph` first if needed).
+
 - If the text after `/ralph` starts with `--`, treat it as **raw flag
   passthrough** to `ralph-loop` (e.g. `--prompt-file PLAN.md
-  --max-iterations 10`) — quote each value correctly yourself.
-- Otherwise treat the **entire** text as free-form prompt text. Write it
-  verbatim, unmodified, via a quoted heredoc so nothing in it gets shell-
-  expanded:
+  --max-iterations 10`) — quote each value correctly yourself, then:
+  - If the flags include `--prompt-file PATH`: copy that file's contents
+    into the canonical location (`cp PATH .claude/ralph/prompt.md`), then
+    drop `--prompt-file PATH` from the flags you'll pass in step 2 and
+    substitute `--prompt-file .claude/ralph/prompt.md`.
+  - If the flags include `--prompt "..."` (a literal inline prompt
+    string): write that text verbatim into `.claude/ralph/prompt.md` via
+    the quoted heredoc below, then likewise drop `--prompt "..."` from the
+    flags and substitute `--prompt-file .claude/ralph/prompt.md`.
+  - Any other flags (`--max-iterations`, `--branch`, etc.) pass through to
+    step 2 unchanged.
+- Otherwise, if the text after `/ralph` is non-empty, treat the **entire**
+  text as free-form prompt text. Write it verbatim, unmodified, via a
+  quoted heredoc so nothing in it gets shell-expanded:
   ```
   mkdir -p .claude/ralph
-  cat > .claude/ralph/pending-prompt.txt <<'RALPH_PROMPT_EOF'
+  cat > .claude/ralph/prompt.md <<'RALPH_PROMPT_EOF'
   <exact user text>
   RALPH_PROMPT_EOF
   ```
-  then pass `--prompt-file .claude/ralph/pending-prompt.txt`.
-- No argument text at all → ask the user for a prompt or `--prompt-file`
-  path before continuing; don't guess.
+  then pass `--prompt-file .claude/ralph/prompt.md` in step 2.
+- No argument text at all (bare `/ralph`, or only non-prompt flags like
+  `--max-iterations 10`): if this session already produced an approved
+  implementation plan before `/ralph` was invoked (e.g. via plan mode),
+  write that plan's full text into `.claude/ralph/prompt.md` using the
+  same quoted heredoc, and pass `--prompt-file .claude/ralph/prompt.md` in
+  step 2.
+- Still nothing to use as a prompt → ask the user for a prompt or
+  `--prompt-file` path before continuing; don't guess.
 
 ## 2. Run the start script
 
