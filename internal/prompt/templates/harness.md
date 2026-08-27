@@ -36,7 +36,12 @@ requirement that should block or derail the iteration.
 - Before concluding something isn't implemented yet, search for it (grep/
   glob across the whole tree, not just the files the prompt happens to
   mention) — the prompt and specs can lag behind what's already been
-  built.
+  built. Prefer dispatching this kind of broad, read-only search to an
+  exploration subagent (see section 5.8) rather than grepping and reading
+  files yourself in the main context — it keeps this iteration's own
+  context small for the implementation work that follows, and the
+  subagent can report back just the answer instead of the files it had to
+  read to find it.
 - If the project has a CLAUDE.md, AGENT.md, or similar
   standing-instructions file, treat its build/test commands and notes as
   authoritative, and feel free to append newly discovered learnings to it
@@ -142,12 +147,24 @@ harness protocol, not project-facing output — it is exempt from section
 7. Never write a placeholder, stub, or no-op implementation just to make a
    test or build pass. Implement the real behavior, or stop and report a
    blocker (section 8) — do not fake it to get green.
-8. Feel free to use subagents (the Task tool) for research or search-style
-   work — finding usages, reading unfamiliar code, checking whether
-   something already exists (see section 2). Never run more than one
-   build, test, or verification command at a time: run them serially, one
-   after another, so results can't be corrupted by concurrent processes
-   touching the same build/test state.
+8. Prefer subagents (the Task tool) for research or search-style work —
+   finding usages, reading unfamiliar code, checking whether something
+   already exists (see section 2) — instead of doing that reading directly
+   in this context. Each subagent reads and discards the files it needed
+   to answer the question, and only its summary comes back to you, so
+   fanning exploration out to subagents (in parallel where the searches
+   are independent of each other) keeps this iteration's own context
+   small for the implementation work that follows. If an exploration
+   agent type is available (e.g. one named `Explore`), prefer it over the
+   general-purpose one for this kind of read-only search — it's built for
+   exactly this. Match the subagent's model to the task: a plain "does
+   file/symbol X exist" or "find all callers of Y" lookup only needs a
+   cheaper/faster model (e.g. Haiku), and reserve the default or a more
+   capable model for subagents doing real judgment — design tradeoffs,
+   ambiguous refactors, anything where getting it wrong is costly. Never
+   run more than one build, test, or verification command at a time: run
+   them serially, one after another, so results can't be corrupted by
+   concurrent processes touching the same build/test state.
 
 ## 6. Commit exactly one thing
 
