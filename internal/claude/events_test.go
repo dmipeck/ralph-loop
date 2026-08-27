@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func readFixture(t *testing.T, name string) []byte {
@@ -101,15 +102,51 @@ func TestParseLine_ResultError(t *testing.T) {
 }
 
 func TestParseLine_UnknownType(t *testing.T) {
-	ev, err := ParseLine([]byte(`{"type":"rate_limit_event","rate_limit_info":{}}`))
+	ev, err := ParseLine([]byte(`{"type":"system","subtype":"init"}`))
 	if err != nil {
 		t.Fatalf("ParseLine: %v", err)
 	}
-	if ev.Type != "rate_limit_event" {
-		t.Errorf("Type = %q, want rate_limit_event", ev.Type)
+	if ev.Type != "system" {
+		t.Errorf("Type = %q, want system", ev.Type)
 	}
-	if ev.Assistant != nil || ev.User != nil || ev.Result != nil {
+	if ev.Assistant != nil || ev.User != nil || ev.Result != nil || ev.RateLimit != nil {
 		t.Errorf("expected no payload for an unrendered event type, got %+v", ev)
+	}
+}
+
+func TestParseLine_RateLimitEventRejected(t *testing.T) {
+	ev, err := ParseLine(readFixture(t, "rate_limit_rejected.jsonl"))
+	if err != nil {
+		t.Fatalf("ParseLine: %v", err)
+	}
+	if ev.Type != "rate_limit_event" || ev.RateLimit == nil {
+		t.Fatalf("expected rate_limit_event, got %+v", ev)
+	}
+	if !ev.RateLimit.Rejected() {
+		t.Error("expected Rejected() = true for status \"rejected\"")
+	}
+	if ev.RateLimit.RateLimitType != "five_hour" {
+		t.Errorf("RateLimitType = %q, want five_hour", ev.RateLimit.RateLimitType)
+	}
+	resetsAt, ok := ev.RateLimit.ResetsAtTime()
+	if !ok {
+		t.Fatal("expected ResetsAtTime to report ok=true")
+	}
+	if want := time.Unix(1735689600, 0); !resetsAt.Equal(want) {
+		t.Errorf("ResetsAtTime = %v, want %v", resetsAt, want)
+	}
+}
+
+func TestParseLine_RateLimitEventNoResetsAt(t *testing.T) {
+	ev, err := ParseLine([]byte(`{"type":"rate_limit_event","rate_limit_info":{"status":"allowed_warning"}}`))
+	if err != nil {
+		t.Fatalf("ParseLine: %v", err)
+	}
+	if ev.RateLimit.Rejected() {
+		t.Error("expected Rejected() = false for status \"allowed_warning\"")
+	}
+	if _, ok := ev.RateLimit.ResetsAtTime(); ok {
+		t.Error("expected ResetsAtTime ok=false when resetsAt is absent")
 	}
 }
 

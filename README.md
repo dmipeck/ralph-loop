@@ -16,7 +16,11 @@ done
 `ralph-loop` is that loop, plus the bookkeeping needed to run it unattended:
 live streaming of what claude is doing, per-iteration logs, commit
 detection, a completion-promise check, and stall/cost/iteration limits so a
-stuck run doesn't burn money forever.
+stuck run doesn't burn money forever. If claude reports it's being
+rate-limited, the loop stops spawning new `claude -p` processes and sleeps
+until the API-reported reset time instead of hammering it every
+`--sleep` interval — it gives up only if the rejection doesn't clear after
+several full reset windows.
 
 ## Build
 

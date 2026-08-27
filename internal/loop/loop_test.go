@@ -3,6 +3,7 @@ package loop
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/dmipeck/ralph-loop/internal/claude"
 	"github.com/dmipeck/ralph-loop/internal/config"
@@ -140,6 +141,61 @@ func TestDecide_ZeroDisablesStallAndIterationLimits(t *testing.T) {
 		if d.Stop {
 			t.Fatalf("did not expect Stop at iteration %d: all limits disabled (0)", i)
 		}
+	}
+}
+
+func rejectedRateLimit(resetsAt *int64) *claude.RateLimitInfo {
+	return &claude.RateLimitInfo{Status: "rejected", ResetsAt: resetsAt, RateLimitType: "five_hour"}
+}
+
+func TestRateLimited_TrueOnlyWhenRejectedAndNoResult(t *testing.T) {
+	ts := int64(1735689600)
+	cases := []struct {
+		name string
+		o    Outcome
+		want bool
+	}{
+		{"rejected with nil result", Outcome{Result: nil, RateLimit: rejectedRateLimit(&ts)}, true},
+		{"rejected with run error", Outcome{RunErr: errors.New("exit 1"), RateLimit: rejectedRateLimit(&ts)}, true},
+		{"no rate limit info at all", Outcome{Result: nil}, false},
+		{"allowed_warning is not a rejection", Outcome{Result: nil, RateLimit: &claude.RateLimitInfo{Status: "allowed_warning"}}, false},
+		{"rejected but a result still came back", Outcome{Result: &claude.ResultEvent{}, RateLimit: rejectedRateLimit(&ts)}, false},
+	}
+	for _, tc := range cases {
+		if got := rateLimited(tc.o); got != tc.want {
+			t.Errorf("%s: rateLimited() = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestRateLimitWait_UsesResetsAtPlusBuffer(t *testing.T) {
+	now := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	resetsAt := now.Add(10 * time.Minute).Unix()
+	info := rejectedRateLimit(&resetsAt)
+
+	got := rateLimitWait(now, info)
+	want := 10*time.Minute + rateLimitBuffer
+	if got != want {
+		t.Errorf("rateLimitWait = %v, want %v", got, want)
+	}
+}
+
+func TestRateLimitWait_ClampsPastResetToBuffer(t *testing.T) {
+	now := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	resetsAt := now.Add(-1 * time.Hour).Unix() // already in the past
+	info := rejectedRateLimit(&resetsAt)
+
+	if got := rateLimitWait(now, info); got != rateLimitBuffer {
+		t.Errorf("rateLimitWait = %v, want %v (clamped to buffer)", got, rateLimitBuffer)
+	}
+}
+
+func TestRateLimitWait_FallsBackWithoutResetsAt(t *testing.T) {
+	now := time.Now()
+	info := &claude.RateLimitInfo{Status: "rejected"} // no ResetsAt
+
+	if got := rateLimitWait(now, info); got != rateLimitFallbackWait {
+		t.Errorf("rateLimitWait = %v, want %v (fallback)", got, rateLimitFallbackWait)
 	}
 }
 
