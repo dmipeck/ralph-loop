@@ -3,6 +3,7 @@ package claude
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 // ContentBlock is one block inside an assistant/user message's "content"
@@ -50,14 +51,50 @@ type ResultEvent struct {
 	SessionID    string  `json:"session_id"`
 }
 
+// RateLimitInfo is the `rate_limit_info` payload of a `{"type":
+// "rate_limit_event", ...}` NDJSON line, emitted whenever claude's view of
+// the account's rate-limit status changes. Field names/casing here mirror
+// the CLI's own internal wire shape exactly (camelCase, unlike the
+// surrounding snake_case envelope) — this is not a documented public API,
+// so a future claude release could change it.
+type RateLimitInfo struct {
+	// Status is "allowed", "allowed_warning", or "rejected". Only
+	// "rejected" means a request actually got throttled rather than just
+	// warned about an approaching cap.
+	Status string `json:"status"`
+	// ResetsAt is Unix epoch seconds for when this limit lifts, or nil if
+	// claude didn't report one (observed alongside every "rejected"
+	// status, but treat it as optional defensively).
+	ResetsAt *int64 `json:"resetsAt"`
+	// RateLimitType identifies which cap was hit, e.g. "five_hour" or
+	// "seven_day".
+	RateLimitType string `json:"rateLimitType"`
+}
+
+// Rejected reports whether this event means a request was actually
+// throttled, as opposed to merely a warning that a cap is approaching.
+func (r RateLimitInfo) Rejected() bool {
+	return r.Status == "rejected"
+}
+
+// ResetsAtTime converts ResetsAt to a time.Time, returning ok=false if no
+// reset time was reported.
+func (r RateLimitInfo) ResetsAtTime() (t time.Time, ok bool) {
+	if r.ResetsAt == nil {
+		return time.Time{}, false
+	}
+	return time.Unix(*r.ResetsAt, 0), true
+}
+
 // Event is the discriminated union produced by ParseLine. Exactly one of
-// Assistant/User/Result is non-nil, matching Type — the rest (e.g. "system",
-// "rate_limit_event") carry no payload we render, so all three are nil.
+// Assistant/User/Result/RateLimit is non-nil, matching Type — the rest
+// (e.g. "system") carry no payload we render, so all four are nil.
 type Event struct {
 	Type      string
 	Assistant *AssistantEvent
 	User      *UserEvent
 	Result    *ResultEvent
+	RateLimit *RateLimitInfo
 }
 
 // ParseLine decodes one NDJSON line from `claude -p --output-format
@@ -94,9 +131,17 @@ func ParseLine(line []byte) (Event, error) {
 			return Event{}, fmt.Errorf("parse result event: %w", err)
 		}
 		ev.Result = &r
+	case "rate_limit_event":
+		var e struct {
+			RateLimitInfo RateLimitInfo `json:"rate_limit_info"`
+		}
+		if err := json.Unmarshal(line, &e); err != nil {
+			return Event{}, fmt.Errorf("parse rate_limit_event: %w", err)
+		}
+		ev.RateLimit = &e.RateLimitInfo
 	default:
-		// system, rate_limit_event, and any future event types we don't
-		// specifically render — carry no payload, that's fine.
+		// system and any future event types we don't specifically render —
+		// carry no payload, that's fine.
 	}
 	return ev, nil
 }

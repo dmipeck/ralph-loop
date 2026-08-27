@@ -22,13 +22,57 @@ import (
 // Outcome is what one iteration produced, as input to Decide.
 type Outcome struct {
 	Iteration     int
-	Result        *claude.ResultEvent // nil if the process crashed / never emitted a result event
-	RunErr        error               // non-nil if the claude subprocess itself failed
+	Result        *claude.ResultEvent   // nil if the process crashed / never emitted a result event
+	RunErr        error                 // non-nil if the claude subprocess itself failed
+	RateLimit     *claude.RateLimitInfo // last rate_limit_event seen this iteration, if any
 	Committed     bool
 	CommitRef     string // short SHA, set iff Committed
 	CommitSubject string // commit message subject line, best-effort, set iff Committed
 	DiffStat      string // `git diff --shortstat` summary, best-effort, set iff Committed
 	Tag           string // set iff a tag was created this iteration (only possible if Committed)
+}
+
+// rateLimited reports whether o represents an iteration that never produced
+// a real answer because the API rejected it for being rate-limited, as
+// opposed to any other kind of failure (a bug, a crash, max-turns, ...).
+func rateLimited(o Outcome) bool {
+	return (o.RunErr != nil || o.Result == nil) && o.RateLimit != nil && o.RateLimit.Rejected()
+}
+
+const (
+	// rateLimitBuffer is added on top of the API-reported reset time to
+	// absorb clock skew between this machine and the API, so we don't come
+	// back online a few seconds early and get rejected again immediately.
+	rateLimitBuffer = 15 * time.Second
+
+	// rateLimitFallbackWait is used when a rejected rate_limit_event
+	// carried no parseable reset time. Should be rare — resetsAt is
+	// normally present whenever status is "rejected" — but backing off and
+	// retrying beats spinning on every claude invocation.
+	rateLimitFallbackWait = 5 * time.Minute
+
+	// maxConsecutiveRateLimitRetries caps how many times in a row we'll
+	// wait out a reported reset and retry the same iteration before giving
+	// up entirely. A transient rate limit clears after one wait; still
+	// being rejected after several full reset windows have passed means
+	// something else is wrong (suspended account, org spend cap, ...) that
+	// waiting can't fix.
+	maxConsecutiveRateLimitRetries = 5
+)
+
+// rateLimitWait computes how long to sleep before retrying a rate-limited
+// iteration: until the API-reported reset time (plus a buffer for clock
+// skew), or a fixed fallback if no reset time was reported at all.
+func rateLimitWait(now time.Time, info *claude.RateLimitInfo) time.Duration {
+	resetsAt, ok := info.ResetsAtTime()
+	if !ok {
+		return rateLimitFallbackWait
+	}
+	wait := resetsAt.Sub(now) + rateLimitBuffer
+	if wait < 0 {
+		wait = rateLimitBuffer
+	}
+	return wait
 }
 
 // tagNameForCommit builds this iteration's git tag name.
@@ -123,6 +167,7 @@ func (c *Controller) Run(ctx context.Context, out io.Writer) error {
 	// at the end of each completed iteration below — there's no separate
 	// pre-check here, since Decide always catches the boundary first.
 	iteration := 0
+	rateLimitRetries := 0
 	for {
 		iteration++
 
@@ -148,6 +193,37 @@ func (c *Controller) Run(ctx context.Context, out io.Writer) error {
 			// A logging/IO-level failure distinct from the subprocess itself.
 			return err
 		}
+
+		// A rate-limit rejection never reaches Decide: it isn't a stall (the
+		// model didn't get a chance to do anything) and hammering claude
+		// again in --sleep seconds would just get rejected again. Wait out
+		// the reported reset instead and retry this same iteration number.
+		if rateLimited(outcome) {
+			rateLimitRetries++
+			if rateLimitRetries > maxConsecutiveRateLimitRetries {
+				fmt.Fprintf(out, "\nGiving up after %d consecutive rate-limit rejections in a row — this no longer looks like a transient rate limit. Check your Claude account's usage/billing status.\n", rateLimitRetries-1)
+				return fmt.Errorf("rate limited %d times in a row, giving up", rateLimitRetries-1)
+			}
+
+			wait := rateLimitWait(time.Now(), outcome.RateLimit)
+			resetDesc := "an unknown time (no reset time reported)"
+			if t, ok := outcome.RateLimit.ResetsAtTime(); ok {
+				resetDesc = t.Local().Format(time.RFC1123)
+			}
+			fmt.Fprintf(out, "Rate limited by the Claude API (%s) — resets around %s. Sleeping %s instead of retrying immediately (attempt %d/%d).\n",
+				outcome.RateLimit.RateLimitType, resetDesc, wait.Round(time.Second), rateLimitRetries, maxConsecutiveRateLimitRetries)
+
+			select {
+			case <-ctx.Done():
+				fmt.Fprintf(out, "\nInterrupted while waiting for the rate limit to lift.\n")
+				return ctx.Err()
+			case <-time.After(wait):
+			}
+
+			iteration-- // this attempt never really ran; retry the same iteration number
+			continue
+		}
+		rateLimitRetries = 0
 
 		// Decide first: it accumulates c.totalCostUSD as a side effect, and
 		// the summary line below wants that running total, not just this
@@ -216,9 +292,9 @@ func (c *Controller) runOneIteration(ctx context.Context, claudeBinary string, i
 		fmt.Fprintf(out, "  ! could not parse a stream-json line (%v), see iteration-%d.jsonl\n", perr, iteration)
 	}
 
-	result, runErr := claude.RunIteration(ctx, claudeBinary, args, c.cfg.RepoDir, logs.Raw, logs.Stderr, renderer, onParseError)
+	result, rateLimit, runErr := claude.RunIteration(ctx, claudeBinary, args, c.cfg.RepoDir, logs.Raw, logs.Stderr, renderer, onParseError)
 
-	outcome := Outcome{Iteration: iteration, Result: result, RunErr: runErr}
+	outcome := Outcome{Iteration: iteration, Result: result, RunErr: runErr, RateLimit: rateLimit}
 
 	if runErr != nil {
 		fmt.Fprintf(out, "claude exited with an error: %v (see iteration-%d.jsonl / iteration-%d.stderr.log)\n", runErr, iteration, iteration)
