@@ -39,7 +39,7 @@ func TestHarnessTemplate_SearchBeforeAssuming(t *testing.T) {
 	}
 }
 
-// TestHarnessTemplate_NoPlaceholdersOrStubs guards the section 4 guardrail
+// TestHarnessTemplate_NoPlaceholdersOrStubs guards the section 5 guardrail
 // against faking green tests/builds with placeholder or stub implementations.
 func TestHarnessTemplate_NoPlaceholdersOrStubs(t *testing.T) {
 	if !strings.Contains(harnessTemplate, "placeholder") {
@@ -50,7 +50,7 @@ func TestHarnessTemplate_NoPlaceholdersOrStubs(t *testing.T) {
 	}
 }
 
-// TestHarnessTemplate_StaticAnalysis guards the section 4 broadening of
+// TestHarnessTemplate_StaticAnalysis guards the section 5 broadening of
 // verification beyond the test suite to also cover static analysis, so a
 // slice isn't considered done until a type-checker/linter is clean too.
 func TestHarnessTemplate_StaticAnalysis(t *testing.T) {
@@ -59,7 +59,7 @@ func TestHarnessTemplate_StaticAnalysis(t *testing.T) {
 	}
 }
 
-// TestHarnessTemplate_SubagentGuidance guards the section 4 guidance that
+// TestHarnessTemplate_SubagentGuidance guards the section 5 guidance that
 // subagents are fine for research/search-style work, but that build/test/
 // verification commands must run one at a time, never concurrently.
 func TestHarnessTemplate_SubagentGuidance(t *testing.T) {
@@ -112,7 +112,7 @@ func TestHarnessTemplate_OpensPRBeforeWork(t *testing.T) {
 	}
 }
 
-// TestHarnessTemplate_PushesEachCommit guards the section 5 requirement
+// TestHarnessTemplate_PushesEachCommit guards the section 6 requirement
 // that each iteration pushes its commit immediately, rather than leaving
 // it local-only for a future iteration to push.
 func TestHarnessTemplate_PushesEachCommit(t *testing.T) {
@@ -121,7 +121,7 @@ func TestHarnessTemplate_PushesEachCommit(t *testing.T) {
 	}
 }
 
-// TestHarnessTemplate_PromiseOnlyAfterCommitAndPush guards the section 9
+// TestHarnessTemplate_PromiseOnlyAfterCommitAndPush guards the section 10
 // requirement that the completion promise may only be reported after this
 // iteration's changes have actually been committed and pushed.
 func TestHarnessTemplate_PromiseOnlyAfterCommitAndPush(t *testing.T) {
@@ -130,5 +130,31 @@ func TestHarnessTemplate_PromiseOnlyAfterCommitAndPush(t *testing.T) {
 	}
 	if !strings.Contains(harnessTemplate, "committed and pushed") {
 		t.Errorf("expected harness template to require commit and push before the completion promise, got: %s", harnessTemplate)
+	}
+}
+
+// TestHarnessTemplate_TodoList guards the section 3 requirement that each
+// iteration maintains a comprehensive todo list at .claude/ralph/todo.md:
+// scoped so every item fits the "Commit exactly one thing" rule, created
+// from the plan if missing, verified against reality, extended with any
+// newly discovered work, and updated before the iteration stops.
+func TestHarnessTemplate_TodoList(t *testing.T) {
+	if !strings.Contains(harnessTemplate, ".claude/ralph/todo.md") {
+		t.Errorf("expected harness template to reference .claude/ralph/todo.md, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "comprehensive checklist") {
+		t.Errorf("expected harness template to require a comprehensive checklist, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "Commit exactly one thing") {
+		t.Errorf("expected harness template to scope todo items to the Commit exactly one thing rule, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "Never assume\n  the list is accurate just because it exists.") {
+		t.Errorf("expected harness template to require verifying the todo list against reality, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "add it as a new item") {
+		t.Errorf("expected harness template to require adding newly discovered work to the todo list, got: %s", harnessTemplate)
+	}
+	if !strings.Contains(harnessTemplate, "Before you stop (section 9), update the list") {
+		t.Errorf("expected harness template to require updating the todo list before stopping, got: %s", harnessTemplate)
 	}
 }
