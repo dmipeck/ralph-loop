@@ -32,27 +32,34 @@ So the prompt file matters more than any flag. If iterations don't converge,
 the fix is almost always the prompt (ordering, scope-per-commit, what counts
 as "done"), not a flag.
 
-## Recommended project structure (optional)
+## Built-in and recommended project structure
 
 ralph-loop doesn't require any particular file layout — the `--prompt`/
-`--prompt-file` text and git history are the only hard requirements. Two
-optional, purely-convention docs make longer runs easier for both the loop
-and the human watching it, if the target project already uses (or wants to
-adopt) them:
+`--prompt-file` text and git history are the only hard requirements. The
+harness itself unconditionally maintains one file every run:
 
-- **A tracked plan/todo doc** (e.g. `docs/ROADMAP.md`, `PLAN.md`) distinct
-  from `--prompt-file` itself — a living, prioritized todo list. The
-  harness tells each iteration to read it while orienting and
-  cross-reference it against `git log`, but keeping it updated is the
-  project prompt's job, not something the harness does automatically —
-  tell the prompt to update it as part of each slice if you want that.
+- **`.claude/ralph/todo.md`** — a comprehensive, checklist-style todo list
+  the harness derives from the project prompt's plan, with every item
+  scoped small enough to satisfy the harness's "commit exactly one thing"
+  rule. Every iteration is told to create it if missing, verify it against
+  `git log`/`git diff` before trusting a stale copy, add any newly
+  discovered work to it (still one-commit-sized), and update it before
+  stopping — this happens automatically, it's not something the project
+  prompt needs to ask for. It's a local planning artifact, not project
+  output: the harness also tells each iteration to keep it out of git
+  (`.git/info/exclude`), so nothing needs to be scaffolded for it up front.
+
+One further, purely-convention doc makes longer runs easier for both the
+loop and the human watching it, if the target project already uses (or
+wants to adopt) it:
+
 - **A standing build/test-commands + learnings doc** (`CLAUDE.md`,
   `AGENT.md`, or similar) — durable facts a future iteration should know
   (how to build, quirks, gotchas), never a status/progress report. If
   present, the harness tells each iteration to treat it as authoritative
   and append new learnings to it.
 
-Neither doc is scaffolded by ralph-loop itself; both are conventions the
+This doc is not scaffolded by ralph-loop itself; it's a convention the
 harness knows to look for and update if present.
 
 ## Workflow
