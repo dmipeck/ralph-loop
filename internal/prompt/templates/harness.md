@@ -77,15 +77,38 @@ you have no memory of prior iterations beyond it and the repo itself.
 
 ## 4. Pick the smallest next slice
 
+This loop follows agile methodology: bias toward whichever ordering gets
+something usable in front of a real user soonest, not whichever ordering
+is easiest to build in isolation. When the todo list offers more than one
+valid next slice, prefer a thin vertical slice that exercises the whole
+path end-to-end (a "walking skeleton") over completing one horizontal
+layer in full before any other — something a person could actually run,
+click through, or call is worth far more early on than a fully-built data
+or infrastructure layer nobody can use yet.
+
 From what remains on the todo list, choose the single smallest next piece
 of work that is:
 
-- A **complete, independently useful increment** — once committed, the
-  codebase is left in a working state with tests passing, not halfway
-  through a change.
+- A **complete, independently usable increment** — once committed, the
+  codebase is left in a working state with tests passing, *and* a person
+  could actually exercise the change end-to-end (run the app, hit the
+  endpoint, use the CLI flag, load the page, ...) — not just observe that
+  a test file passed. If the slice you're about to pick would leave a
+  change reachable only from a unit test, with no way for anyone to
+  actually use it yet, look for a smaller reordering that makes it
+  reachable sooner, or treat it as a foundation step and pull forward
+  whatever wiring is needed to make it usable.
+- **Genuinely useful, if it's a feature** — a feature slice must move the
+  project's stated goal forward in a way a real user of the project would
+  notice or benefit from, not just add code that technically satisfies a
+  checklist item. A function nothing calls, a flag nothing reads, or a
+  code path nothing reaches is a sign the slice is scoped wrong: reorder
+  or re-slice it so every feature that lands does something real the
+  moment it's committed.
 - Correctly **ordered** — respect whatever dependency order the project
   prompt lays out, but feel free to break any single step into smaller
-  sub-steps if it's too big for one commit.
+  sub-steps if it's too big for one commit, and when the prompt leaves the
+  order open, prefer whichever path reaches a usable state soonest.
 
 Once you've picked it, before doing anything else, output one line of
 plain text: `<plan>one-sentence description of the slice you're about to
@@ -105,12 +128,21 @@ harness protocol, not project-facing output — it is exempt from section
    confirm everything is green — and if the project defines a
    type-checker, linter, or other static-analysis command, run that too; a
    slice isn't done until both are clean.
-5. Refactor only as much as needed to keep the change minimal and
+5. Green tests are necessary but not sufficient — also confirm the slice
+   is actually usable by exercising it the way a real user would, not
+   just through its unit tests: start the app, run the CLI command, hit
+   the endpoint, load the page, whatever fits this project. If this
+   environment offers a way to launch the project (a documented dev-server
+   command, a `run`-style skill, ...), use it. A change that's fully
+   covered by green tests but that nobody could actually go and use isn't
+   done yet — go back and finish the wiring rather than calling it
+   complete.
+6. Refactor only as much as needed to keep the change minimal and
    consistent with the surrounding code, while keeping tests green.
-6. Never write a placeholder, stub, or no-op implementation just to make a
+7. Never write a placeholder, stub, or no-op implementation just to make a
    test or build pass. Implement the real behavior, or stop and report a
    blocker (section 8) — do not fake it to get green.
-7. Feel free to use subagents (the Task tool) for research or search-style
+8. Feel free to use subagents (the Task tool) for research or search-style
    work — finding usages, reading unfamiliar code, checking whether
    something already exists (see section 2). Never run more than one
    build, test, or verification command at a time: run them serially, one
